@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ぶたの家計簿 - シンプルな家計簿アプリ</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🐷 ぶたの家計簿</h1>
+            <div class="balance-display">
+                <span class="balance-label">今月の収支</span>
+                <span class="balance-amount" id="currentBalance">¥0</span>
+            </div>
+        </header>
+
+        <main>
+            <!-- 入力フォーム -->
+            <section class="input-section">
+                <h2>収支を記録</h2>
+                <form id="transactionForm">
+                    <div class="transaction-type">
+                        <button type="button" class="type-btn active" data-type="expense">支出</button>
+                        <button type="button" class="type-btn" data-type="income">収入</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="amount">金額</label>
+                        <input type="number" id="amount" placeholder="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="category">カテゴリー</label>
+                        <div class="category-grid" id="categoryGrid">
+                            <!-- カテゴリーボタンは動的に生成 -->
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="memo">メモ（任意）</label>
+                        <input type="text" id="memo" placeholder="メモを入力">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="date">日付</label>
+                        <input type="date" id="date" required>
+                    </div>
+
+                    <button type="submit" class="submit-btn">記録する</button>
+                </form>
+            </section>
+
+            <!-- 月選択 -->
+            <section class="month-selector">
+                <button id="prevMonth">◀</button>
+                <span id="currentMonth">2025年1月</span>
+                <button id="nextMonth">▶</button>
+            </section>
+
+            <!-- 集計表示 -->
+            <section class="summary-section">
+                <div class="summary-card">
+                    <h3>収入</h3>
+                    <p class="amount income" id="totalIncome">¥0</p>
+                </div>
+                <div class="summary-card">
+                    <h3>支出</h3>
+                    <p class="amount expense" id="totalExpense">¥0</p>
+                </div>
+                <div class="summary-card">
+                    <h3>残高</h3>
+                    <p class="amount balance" id="totalBalance">¥0</p>
+                </div>
+            </section>
+
+            <!-- グラフ表示 -->
+            <section class="chart-section">
+                <h2>カテゴリー別支出</h2>
+                <div id="chartContainer">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </section>
+
+            <!-- 履歴表示 -->
+            <section class="history-section">
+                <h2>取引履歴</h2>
+                <div id="transactionList">
+                    <!-- 取引履歴は動的に生成 -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
