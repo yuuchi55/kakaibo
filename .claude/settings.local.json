@@ -6,7 +6,16 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(ssh-keygen:*)",
+      "Bash(cat:*)",
+      "Bash(ssh:*)",
+      "Bash(chmod:*)",
+      "Bash(python3:*)",
+      "Bash(gh repo view:*)"
     ],
     "deny": []
   }

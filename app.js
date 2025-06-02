@@ -273,20 +273,52 @@ function updateChart() {
     const monthTransactions = getMonthTransactions();
     const expenseTransactions = monthTransactions.filter(t => t.type === 'expense');
     
-    // カテゴリー別集計
-    const categoryTotals = {};
+    // 大項目と中項目で集計
+    const categoryData = {};
+    
     expenseTransactions.forEach(t => {
-        const categoryId = t.category.id;
-        if (!categoryTotals[categoryId]) {
-            categoryTotals[categoryId] = {
-                name: t.category.name,
-                amount: 0
-            };
+        // 親カテゴリーがある場合（中項目の場合）
+        if (t.category.parentCategory) {
+            const parentId = t.category.parentCategory.id;
+            const parentName = t.category.parentCategory.name;
+            const parentIcon = t.category.parentCategory.icon;
+            
+            if (!categoryData[parentId]) {
+                categoryData[parentId] = {
+                    id: parentId,
+                    name: parentName,
+                    icon: parentIcon,
+                    total: 0,
+                    subcategories: {}
+                };
+            }
+            
+            categoryData[parentId].total += t.amount;
+            
+            if (!categoryData[parentId].subcategories[t.category.id]) {
+                categoryData[parentId].subcategories[t.category.id] = {
+                    id: t.category.id,
+                    name: t.category.name,
+                    icon: t.category.icon,
+                    amount: 0
+                };
+            }
+            categoryData[parentId].subcategories[t.category.id].amount += t.amount;
+        } else {
+            // 親カテゴリーがない場合（大項目のみの場合）
+            const categoryId = t.category.id;
+            if (!categoryData[categoryId]) {
+                categoryData[categoryId] = {
+                    id: categoryId,
+                    name: t.category.name,
+                    icon: t.category.icon,
+                    total: 0,
+                    subcategories: {}
+                };
+            }
+            categoryData[categoryId].total += t.amount;
         }
-        categoryTotals[categoryId].amount += t.amount;
     });
-
-    const chartData = Object.values(categoryTotals);
     
     // 既存のチャートを破棄
     const existingChart = Chart.getChart('categoryChart');
@@ -294,62 +326,155 @@ function updateChart() {
         existingChart.destroy();
     }
 
-    if (chartData.length === 0) {
+    if (Object.keys(categoryData).length === 0) {
         document.getElementById('chartContainer').innerHTML = '<p style="text-align: center; color: #999;">データがありません</p>';
         return;
     }
 
-    document.getElementById('chartContainer').innerHTML = '<canvas id="categoryChart"></canvas>';
-
-    // 新しいチャートを作成
-    const ctx = document.getElementById('categoryChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: chartData.map(d => d.name),
-            datasets: [{
-                data: chartData.map(d => d.amount),
-                backgroundColor: [
-                    '#ff6b6b',
-                    '#4ecdc4',
-                    '#45b7d1',
-                    '#f9ca24',
-                    '#6c5ce7',
-                    '#a29bfe',
-                    '#fd79a8',
-                    '#dfe6e9'
-                ],
-                borderWidth: 2,
-                borderColor: '#fff'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 15,
-                        font: {
-                            size: 12
+    // チャートコンテナをクリア
+    document.getElementById('chartContainer').innerHTML = '';
+    
+    // 各大項目ごとに円グラフを作成
+    Object.values(categoryData).forEach((category, index) => {
+        const hasSubcategories = Object.keys(category.subcategories).length > 0;
+        
+        // サブカテゴリーがある場合のみグラフを表示
+        if (hasSubcategories) {
+            // コンテナを作成
+            const chartWrapper = document.createElement('div');
+            chartWrapper.className = 'chart-wrapper';
+            chartWrapper.style.marginBottom = '30px';
+            
+            // タイトル
+            const title = document.createElement('h3');
+            title.style.textAlign = 'center';
+            title.style.marginBottom = '10px';
+            title.innerHTML = `${category.icon} ${category.name} (¥${category.total.toLocaleString()})`;
+            chartWrapper.appendChild(title);
+            
+            // キャンバス
+            const canvas = document.createElement('canvas');
+            canvas.id = `categoryChart-${category.id}`;
+            canvas.style.maxHeight = '300px';
+            chartWrapper.appendChild(canvas);
+            
+            document.getElementById('chartContainer').appendChild(chartWrapper);
+            
+            // サブカテゴリーのデータを準備
+            const subcategoryData = Object.values(category.subcategories);
+            
+            // 円グラフを作成
+            const ctx = canvas.getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: subcategoryData.map(d => `${d.icon} ${d.name}`),
+                    datasets: [{
+                        data: subcategoryData.map(d => d.amount),
+                        backgroundColor: [
+                            '#ff6b6b',
+                            '#4ecdc4',
+                            '#45b7d1',
+                            '#f9ca24',
+                            '#6c5ce7',
+                            '#a29bfe',
+                            '#fd79a8',
+                            '#dfe6e9'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                padding: 10,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = category.total;
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${label}: ¥${value.toLocaleString()} (${percentage}%)`;
+                                }
+                            }
                         }
                     }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const label = context.label || '';
-                            const value = context.parsed || 0;
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = ((value / total) * 100).toFixed(1);
-                            return `${label}: ¥${value.toLocaleString()} (${percentage}%)`;
+                }
+            });
+        }
+    });
+    
+    // サブカテゴリーを持つ大項目がない場合
+    const chartsCreated = document.getElementById('chartContainer').children.length;
+    if (chartsCreated === 0) {
+        // 大項目のみの円グラフを表示
+        document.getElementById('chartContainer').innerHTML = '<canvas id="categoryChart"></canvas>';
+        
+        const chartData = Object.values(categoryData).map(cat => ({
+            name: `${cat.icon} ${cat.name}`,
+            amount: cat.total
+        }));
+        
+        const ctx = document.getElementById('categoryChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: chartData.map(d => d.name),
+                datasets: [{
+                    data: chartData.map(d => d.amount),
+                    backgroundColor: [
+                        '#ff6b6b',
+                        '#4ecdc4',
+                        '#45b7d1',
+                        '#f9ca24',
+                        '#6c5ce7',
+                        '#a29bfe',
+                        '#fd79a8',
+                        '#dfe6e9'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${label}: ¥${value.toLocaleString()} (${percentage}%)`;
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        });
+    }
 }
 
 // 現在の月の取引を取得
