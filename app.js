@@ -331,150 +331,125 @@ function updateChart() {
         return;
     }
 
-    // チャートコンテナをクリア
-    document.getElementById('chartContainer').innerHTML = '';
+    document.getElementById('chartContainer').innerHTML = '<canvas id="categoryChart"></canvas>';
     
-    // 各大項目ごとに円グラフを作成
-    Object.values(categoryData).forEach((category, index) => {
+    // 一つの円グラフで表示するためのデータを準備
+    const labels = [];
+    const data = [];
+    const backgroundColor = [];
+    const borderColor = [];
+    
+    // カラーパレット
+    const parentColors = {
+        'food': '#ff6b6b',
+        'transport': '#4ecdc4',
+        'shopping': '#45b7d1',
+        'entertainment': '#f9ca24',
+        'utilities': '#6c5ce7',
+        'medical': '#a29bfe',
+        'education': '#fd79a8',
+        'other': '#dfe6e9'
+    };
+    
+    // 各カテゴリーのデータを処理
+    Object.values(categoryData).forEach((category) => {
         const hasSubcategories = Object.keys(category.subcategories).length > 0;
+        const baseColor = parentColors[category.id] || '#999999';
         
-        // サブカテゴリーがある場合のみグラフを表示
         if (hasSubcategories) {
-            // コンテナを作成
-            const chartWrapper = document.createElement('div');
-            chartWrapper.className = 'chart-wrapper';
-            chartWrapper.style.marginBottom = '30px';
-            
-            // タイトル
-            const title = document.createElement('h3');
-            title.style.textAlign = 'center';
-            title.style.marginBottom = '10px';
-            title.innerHTML = `${category.icon} ${category.name} (¥${category.total.toLocaleString()})`;
-            chartWrapper.appendChild(title);
-            
-            // キャンバス
-            const canvas = document.createElement('canvas');
-            canvas.id = `categoryChart-${category.id}`;
-            canvas.style.maxHeight = '300px';
-            chartWrapper.appendChild(canvas);
-            
-            document.getElementById('chartContainer').appendChild(chartWrapper);
-            
-            // サブカテゴリーのデータを準備
-            const subcategoryData = Object.values(category.subcategories);
-            
-            // 円グラフを作成
-            const ctx = canvas.getContext('2d');
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: subcategoryData.map(d => `${d.icon} ${d.name}`),
-                    datasets: [{
-                        data: subcategoryData.map(d => d.amount),
-                        backgroundColor: [
-                            '#ff6b6b',
-                            '#4ecdc4',
-                            '#45b7d1',
-                            '#f9ca24',
-                            '#6c5ce7',
-                            '#a29bfe',
-                            '#fd79a8',
-                            '#dfe6e9'
-                        ],
-                        borderWidth: 2,
-                        borderColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                padding: 10,
-                                font: {
-                                    size: 11
-                                }
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.parsed || 0;
-                                    const total = category.total;
-                                    const percentage = ((value / total) * 100).toFixed(1);
-                                    return `${label}: ¥${value.toLocaleString()} (${percentage}%)`;
-                                }
-                            }
-                        }
-                    }
-                }
+            // サブカテゴリーがある場合は、サブカテゴリーごとに追加
+            Object.values(category.subcategories).forEach((sub, index) => {
+                labels.push(`${category.icon} ${category.name} - ${sub.icon} ${sub.name}`);
+                data.push(sub.amount);
+                // 同じ大項目のサブカテゴリーは似た色にする（明度を変える）
+                const brightness = 0.7 + (index * 0.1);
+                backgroundColor.push(adjustColor(baseColor, brightness));
+                borderColor.push('#fff');
             });
+        } else {
+            // サブカテゴリーがない場合は大項目をそのまま追加
+            labels.push(`${category.icon} ${category.name}`);
+            data.push(category.total);
+            backgroundColor.push(baseColor);
+            borderColor.push('#fff');
         }
     });
     
-    // サブカテゴリーを持つ大項目がない場合
-    const chartsCreated = document.getElementById('chartContainer').children.length;
-    if (chartsCreated === 0) {
-        // 大項目のみの円グラフを表示
-        document.getElementById('chartContainer').innerHTML = '<canvas id="categoryChart"></canvas>';
-        
-        const chartData = Object.values(categoryData).map(cat => ({
-            name: `${cat.icon} ${cat.name}`,
-            amount: cat.total
-        }));
-        
-        const ctx = document.getElementById('categoryChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: chartData.map(d => d.name),
-                datasets: [{
-                    data: chartData.map(d => d.amount),
-                    backgroundColor: [
-                        '#ff6b6b',
-                        '#4ecdc4',
-                        '#45b7d1',
-                        '#f9ca24',
-                        '#6c5ce7',
-                        '#a29bfe',
-                        '#fd79a8',
-                        '#dfe6e9'
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#fff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 15,
-                            font: {
-                                size: 12
-                            }
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.parsed || 0;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+    // 円グラフを作成
+    const ctx = document.getElementById('categoryChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: backgroundColor,
+                borderWidth: 2,
+                borderColor: borderColor
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        padding: 10,
+                        font: {
+                            size: 11
+                        },
+                        generateLabels: function(chart) {
+                            const data = chart.data;
+                            const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                            
+                            return data.labels.map((label, i) => {
+                                const value = data.datasets[0].data[i];
                                 const percentage = ((value / total) * 100).toFixed(1);
-                                return `${label}: ¥${value.toLocaleString()} (${percentage}%)`;
-                            }
+                                
+                                return {
+                                    text: `${label} (${percentage}%)`,
+                                    fillStyle: data.datasets[0].backgroundColor[i],
+                                    strokeStyle: data.datasets[0].borderColor[i],
+                                    lineWidth: data.datasets[0].borderWidth,
+                                    hidden: false,
+                                    index: i
+                                };
+                            });
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: ¥${value.toLocaleString()} (${percentage}%)`;
                         }
                     }
                 }
             }
-        });
-    }
+        }
+    });
+}
+
+// 色の明度を調整する関数
+function adjustColor(color, brightness) {
+    // HEXカラーをRGBに変換
+    const hex = color.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // 明度を調整
+    const newR = Math.min(255, Math.floor(r * brightness));
+    const newG = Math.min(255, Math.floor(g * brightness));
+    const newB = Math.min(255, Math.floor(b * brightness));
+    
+    // RGBをHEXに戻す
+    return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
 }
 
 // 現在の月の取引を取得
