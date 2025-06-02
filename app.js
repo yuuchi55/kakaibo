@@ -17,7 +17,20 @@ const categories = {
                 { id: 'cafe', name: 'カフェ', icon: '☕' }
             ]
         },
-        { id: 'transport', name: '交通費', icon: '🚃' },
+        { 
+            id: 'transport', 
+            name: '交通費', 
+            icon: '🚃',
+            subcategories: [
+                { id: 'train', name: '電車', icon: '🚆' },
+                { id: 'bus', name: 'バス', icon: '🚌' },
+                { id: 'taxi', name: 'タクシー', icon: '🚕' },
+                { id: 'gas', name: 'ガソリン', icon: '⛽' },
+                { id: 'highway', name: '高速道路', icon: '🛣️' },
+                { id: 'parking', name: '駐車場', icon: '🅿️' },
+                { id: 'other_transport', name: 'その他', icon: '🚲' }
+            ]
+        },
         { id: 'shopping', name: '買い物', icon: '🛍️' },
         { id: 'entertainment', name: '娯楽', icon: '🎮' },
         { id: 'utilities', name: '光熱費', icon: '💡' },

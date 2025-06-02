@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "WebFetch(domain:play.google.com)",
-      "WebFetch(domain:apps.apple.com)"
+      "WebFetch(domain:apps.apple.com)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git config:*)"
     ],
     "deny": []
   }
