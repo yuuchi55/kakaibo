@@ -321,9 +321,8 @@ function updateChart() {
     });
     
     // 既存のチャートを破棄
-    const existingChart = Chart.getChart('categoryChart');
-    if (existingChart) {
-        existingChart.destroy();
+    if (window.categoryChart && window.categoryChart instanceof Chart) {
+        window.categoryChart.destroy();
     }
 
     if (Object.keys(categoryData).length === 0) {
@@ -377,7 +376,7 @@ function updateChart() {
     
     // 円グラフを作成
     const ctx = document.getElementById('categoryChart').getContext('2d');
-    new Chart(ctx, {
+    window.categoryChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: labels,
